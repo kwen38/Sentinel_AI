@@ -108,26 +108,20 @@ def clip(center, size, max_size):
         end = start + size
     return start, end
 
-# Collect input data
-def get_input_data(image_dir):
+def get_input_data(image):
     result_list = []
 
     predictor = LandmarkPredictor(gpu_id=-1)
     detector = RetinaFace(gpu_id=-1)
     head_pose = SixDRep(gpu_id=-1)
 
-    all_images = []
-    names = os.listdir(image_dir)
+    # Process a single image
+    img = image
+    all_faces = detector.pseudo_batch_detect([img], cv=True, threshold=0.9)
+    all_landmarks = predictor(all_faces, [img], from_fd=True)
+    all_poses = head_pose(all_faces, [img])
 
-    for name in names:
-        img = cv2.imread(os.path.join(image_dir, name))
-        all_images.append(img)
-
-    all_faces = detector.pseudo_batch_detect(all_images, cv=True, threshold=0.9)
-    all_landmarks = predictor(all_faces, all_images, from_fd=True)
-    all_poses = head_pose(all_faces, all_images)
-
-    for faces, landmarks, img, name, pose in zip(all_faces, all_landmarks, all_images, names, all_poses):
+    for faces, landmarks, pose in zip(all_faces, all_landmarks, all_poses):
         for face, landmark, pose_data in zip(faces, landmarks, pose):
             bbox = parse_roi_box_from_bbox(face[0], img.shape[:2])
             concatenated_eyes = crop_eyes(face, img)
