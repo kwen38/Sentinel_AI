@@ -117,10 +117,23 @@ def get_input_data(image):
 
     # Process a single image
     img = image
+
+    # Validate the image
+    if img is None:
+        print('Failed to load image')
+        return result_list
+
     all_faces = detector.pseudo_batch_detect([img], cv=True, threshold=0.9)
+
+    # Check if faces were detected
+    if not all_faces or not all_faces[0]:
+        print('No faces detected')
+        return result_list
+
     all_landmarks = predictor(all_faces, [img], from_fd=True)
     all_poses = head_pose(all_faces, [img])
 
+    # Process detected faces
     for faces, landmarks, pose in zip(all_faces, all_landmarks, all_poses):
         for face, landmark, pose_data in zip(faces, landmarks, pose):
             bbox = parse_roi_box_from_bbox(face[0], img.shape[:2])
